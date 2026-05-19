@@ -1,0 +1,33 @@
+// Fase 2 — sintaxis núcleo: program, var, begin/end, write, :=, expresiones aritméticas.
+// Sin if / while / for (Fase 3). Terminales en lexer/terminals.lark (compuesto en Python).
+
+?start: program
+
+program: PROGRAM MAIN LBRACE decls stmt_section RBRACE
+
+decls: VAR ident_list COLON INT_KW SEMICOLON
+
+ident_list: IDENT (COMMA IDENT)*
+
+stmt_section: BEGIN SEMICOLON stmt_list END SEMICOLON
+
+stmt_list: stmt*
+
+?stmt: assign_stmt | write_stmt
+
+assign_stmt: IDENT ASSIGN expr SEMICOLON
+
+write_stmt: WRITE LPAR write_arg RPAR SEMICOLON
+
+write_arg: expr | STRING
+
+expr: sum
+
+sum: product
+    | sum PLUS product
+    | sum MINUS product
+
+product: factor
+    | product STAR factor
+
+factor: IDENT | INTEGER | LPAR expr RPAR

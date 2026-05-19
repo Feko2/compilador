@@ -1,4 +1,4 @@
-"""CLI: `python -m compilador <archivo>` — tokens (Fase 1) o `--parse` (Fase 2)."""
+"""CLI: tokens, parse o informe HTML visual (`--report`)."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from lark import UnexpectedCharacters, UnexpectedInput
 from compilador.errors import format_unexpected_characters, format_unexpected_input
 from compilador.lexer import tokenize_file
 from compilador.parser import parse_file
+from compilador.viz import generate_report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,7 +22,31 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Fase 2: árbol de parseo (sintaxis núcleo, sin if/while/for)",
     )
+    parser.add_argument(
+        "--report",
+        nargs="?",
+        const="",
+        metavar="HTML",
+        help="Informe HTML: código coloreado, errores, tokens, árbol; "
+        "secciones IR/memoria/salida cuando existan (Fase 6–7)",
+    )
+    parser.add_argument(
+        "--no-parse",
+        action="store_true",
+        help="Con --report: solo léxico (no intentar parsear)",
+    )
     args = parser.parse_args(argv)
+
+    if args.report is not None:
+        out = Path(args.report) if args.report else None
+        try:
+            dest = generate_report(args.path, out, try_parse=not args.no_parse)
+        except OSError as exc:
+            sys.stderr.write(f"error: no se pudo leer o escribir: {exc}\n")
+            return 1
+        print(dest)
+        return 0
+
     try:
         if args.parse:
             tree = parse_file(args.path)

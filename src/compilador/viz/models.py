@@ -7,26 +7,12 @@ from dataclasses import dataclass, field
 from lark import Token
 
 from compilador.diagnostic import Diagnostic
-
-
-@dataclass
-class Quadruple:
-    index: int
-    op: str
-    arg1: str
-    arg2: str
-    result: str
-
-
-@dataclass
-class MemoryCell:
-    name: str
-    type_name: str
-    value: str
+from compilador.models import MemoryCell, Quadruple  # noqa: F401 — re-export
 
 
 @dataclass
 class CompilationReport:
+    """Resultado completo de todas las fases, para visualizar en HTML."""
     source_path: str
     source_text: str
     tokens: list[Token] = field(default_factory=list)

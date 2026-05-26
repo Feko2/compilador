@@ -8,7 +8,8 @@ from pathlib import Path
 from lark import Token
 
 from compilador.diagnostic import Diagnostic
-from compilador.viz.models import CompilationReport, MemoryCell, Quadruple
+from compilador.models import MemoryCell, Quadruple
+from compilador.viz.models import CompilationReport
 from compilador.viz.token_style import css_class_for_token
 
 _CSS = """

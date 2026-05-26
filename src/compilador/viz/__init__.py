@@ -6,7 +6,8 @@ from pathlib import Path
 
 from compilador.viz.collect import build_report
 from compilador.viz.html import render_html, write_report_html
-from compilador.viz.models import CompilationReport, MemoryCell, Quadruple
+from compilador.viz.models import CompilationReport
+from compilador.models import MemoryCell, Quadruple
 
 __all__ = [
     "CompilationReport",

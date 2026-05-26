@@ -1,4 +1,4 @@
-"""Informe HTML visual."""
+"""Informe HTML visual — tests de integración."""
 
 from __future__ import annotations
 
@@ -28,13 +28,11 @@ def test_render_html_has_sections() -> None:
     assert "tok-keyword" in html
 
 
-def test_report_shows_syntax_error_on_prueba_if() -> None:
+def test_report_prueba_if_parses_ok() -> None:
+    """Con la gramática Fase 3, pruebaIf.txt parsea sin error sintáctico."""
     report = build_report(PRUEBAS / "pruebaIf.txt")
-    assert report.diagnostics
-    assert report.diagnostics[0].phase == "syntax"
-    html = render_html(report)
-    assert "error-line" in html
-    assert report.diagnostics[0].hint
+    assert not any(d.phase == "syntax" for d in report.diagnostics)
+    assert report.parse_tree is not None
 
 
 def test_report_nucleo_parses(tmp_path: Path) -> None:

@@ -66,15 +66,6 @@ def test_nucleo_for_structure() -> None:
     assert idents == ["i", "n", "x"]
 
 
-@pytest.mark.parametrize(
-    "name",
-    ["pruebaFor.txt", "pruebaWhile.txt", "pruebaIf.txt", "pruebaErrores.txt"],
-)
-def test_full_pruebas_reject_without_control_flow_grammar(name: str) -> None:
-    with pytest.raises(UnexpectedInput):
-        parse_file(PRUEBAS / name)
-
-
 def test_invalid_syntax() -> None:
     with pytest.raises(UnexpectedInput):
         parse("program main { var x : int; begin; x := ; end; }")

@@ -1,4 +1,12 @@
-"""Analizador sintáctico núcleo (Fase 2): sin control de flujo."""
+"""
+Analizador sintáctico (Fases 2–3).
+
+Fase 2: programa núcleo (var, begin/end, write, :=, expresiones).
+Fase 3: control de flujo (if/then/else, while/do, for).
+
+Utiliza la gramática definida en grammar/program.lark combinada con
+los terminales de lexer/terminals.lark (a través de lark_util).
+"""
 
 from __future__ import annotations
 
@@ -21,4 +29,5 @@ def parse(text: str) -> Tree:
 
 
 def parse_file(path: Path) -> Tree:
+    """Lee un archivo fuente y devuelve su árbol de parseo."""
     return parse(path.read_text(encoding="utf-8"))

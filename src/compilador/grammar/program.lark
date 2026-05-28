@@ -1,25 +1,43 @@
 // ============================================================================
-// GRAMÁTICA COMPLETA — Fases 2 y 3
+// GRAMÁTICA COMPLETA — Fases 2, 3 y extra (arreglos + funciones)
 // ============================================================================
 // Fase 2: program, var, begin/end, write, :=, expresiones aritméticas.
 // Fase 3: if/then/else, while/do, for(init;cond;incr), comparaciones, and.
+// Extra:  array [N] of int, arr[i], function f(a: int) : int { ... }
 //
-// Los terminales se definen en lexer/terminals.lark (compuestos en Python
-// mediante lark_util.compose_lark). Esta gramática solo contiene reglas
-// sintácticas (no-terminales).
-// ============================================================================
+// Los terminales se definen en lexer/terminals.lark.
 
 ?start: program
 
 // --- Estructura del programa ------------------------------------------------
-// Un programa siempre sigue: program main { declaraciones begin; ... end; }
-program: PROGRAM MAIN LBRACE decls stmt_section RBRACE
+// program main { declaraciones, funciones opcionales, begin; ... end; }
+program: PROGRAM MAIN LBRACE top_level_items RBRACE
+
+top_level_items: top_level_item*
+
+top_level_item: decls
+              | function_def
+              | stmt_section
 
 // --- Declaraciones ----------------------------------------------------------
-// Solo soporta un bloque "var" con tipo int (según los archivos de pruebas/)
-decls: VAR ident_list COLON INT_KW SEMICOLON
+// var i, n : int;
+// var nums : array [5] of int;   (índices válidos: 0 .. N-1)
+decls: VAR decl_item (COMMA decl_item)* SEMICOLON
+
+decl_item: ident_list COLON type_spec
 
 ident_list: IDENT (COMMA IDENT)*
+
+type_spec: INT_KW -> int_type
+         | ARRAY LBRACK INTEGER RBRACK OF INT_KW -> array_type
+
+// --- Funciones --------------------------------------------------------------
+// function suma(a, b : int) : int { begin; suma := a + b; end; }
+function_def: FUNCTION IDENT LPAR param_list? RPAR COLON INT_KW LBRACE stmt_section RBRACE
+
+param_list: param_group (COMMA param_group)*
+
+param_group: ident_list COLON INT_KW
 
 // --- Sección de sentencias (entre begin; y end;) ----------------------------
 stmt_section: BEGIN SEMICOLON stmt_list END SEMICOLON
@@ -27,7 +45,6 @@ stmt_section: BEGIN SEMICOLON stmt_list END SEMICOLON
 stmt_list: stmt*
 
 // --- Sentencias -------------------------------------------------------------
-// Cada sentencia puede ser: asignación, write, if, while, for, o post-inc/dec
 ?stmt: assign_stmt
      | write_stmt
      | if_stmt
@@ -35,8 +52,11 @@ stmt_list: stmt*
      | for_stmt
      | postfix_stmt
 
-// --- Asignación: variable := expresión; ------------------------------------
-assign_stmt: IDENT ASSIGN expr SEMICOLON
+// --- Asignación: variable o arreglo[index] := expresión; --------------------
+assign_stmt: assignable ASSIGN expr SEMICOLON
+
+assignable: IDENT -> var_lvalue
+          | IDENT LBRACK expr RBRACK -> array_lvalue
 
 // --- Write: write(expr) o write("cadena"); ---------------------------------
 write_stmt: WRITE LPAR write_arg RPAR SEMICOLON
@@ -44,20 +64,15 @@ write_stmt: WRITE LPAR write_arg RPAR SEMICOLON
 write_arg: expr | STRING
 
 // --- If / then / else -------------------------------------------------------
-// Forma: if (condición) then { ... } else { ... }
-// El else es opcional (pruebaIf.txt usa else, pruebaErrores.txt también)
 if_stmt: IF LPAR condition RPAR THEN block else_clause?
 
 else_clause: ELSE block
            | ELSE if_stmt
 
 // --- While / do -------------------------------------------------------------
-// Forma: while (condición) do { ... }
 while_stmt: WHILE LPAR condition RPAR DO block
 
 // --- For --------------------------------------------------------------------
-// Forma: for (init; cond; incr) { ... }
-// init es asignación, cond es condición, incr es asignación o postfix
 for_stmt: FOR LPAR for_init SEMICOLON condition SEMICOLON for_update RPAR block
 
 for_init: IDENT ASSIGN expr
@@ -74,23 +89,8 @@ postfix_stmt: IDENT DEC SEMICOLON -> dec_stmt
 block: LBRACE stmt_list RBRACE
 
 // --- Condiciones (expresiones booleanas) ------------------------------------
-// Soporta: comparaciones simples y "and" entre condiciones.
-// "and" une dos condiciones (pruebaErrores.txt: (a>b) and (expr))
-//
-// Diseño: una condición es una lista de "cond_atom" unidos por AND.
-// Cada cond_atom puede ser:
-//   - Una comparación sin paréntesis: expr OP expr
-//   - Un átomo entre paréntesis que internamente es comparación o expr
-//
-// Para evitar ambigüedad con factor: LPAR expr RPAR (que es aritmética),
-// las comparaciones aparecen en un contexto propio (dentro de if/while/for).
-// El LALR parser puede distinguirlos porque condition solo aparece tras IF/WHILE/FOR LPAR.
-//
-// El chequeo de que expr_cond sea booleano es responsabilidad de Fase 5.
 condition: cond_atom (AND cond_atom)* -> condition
 
-// Un átomo de condición puede estar entre paréntesis o ser una comparación directa.
-// paren_cond resuelve el caso de pruebaErrores: ( a>b ) y ( expr )
 cond_atom: LPAR condition RPAR -> paren_cond
          | expr GT expr        -> cmp_gt
          | expr LT expr        -> cmp_lt
@@ -98,16 +98,25 @@ cond_atom: LPAR condition RPAR -> paren_cond
          | expr                -> expr_cond
 
 // --- Expresiones aritméticas ------------------------------------------------
-// Precedencia: + - (suma) < * (producto) < átomo
 ?expr: sum
 
 ?sum: product
     | sum PLUS product   -> add
     | sum MINUS product  -> sub
 
-?product: factor
-        | product STAR factor -> mul
+?product: primary
+        | product STAR primary -> mul
 
-?factor: IDENT
-       | INTEGER
-       | LPAR expr RPAR
+?primary: call_expr
+        | var_ref
+        | INTEGER           -> int_lit
+        | LPAR expr RPAR
+
+// Llamada a función: suma(3, 4)
+call_expr: IDENT LPAR arg_list? RPAR -> call
+
+arg_list: expr (COMMA expr)*
+
+// Variable simple o acceso a arreglo: x  /  nums[i]
+var_ref: IDENT -> var_ref
+       | IDENT LBRACK expr RBRACK -> array_ref

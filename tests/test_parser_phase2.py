@@ -60,9 +60,11 @@ def test_nucleo_fragments_parse(source: str) -> None:
 def test_nucleo_for_structure() -> None:
     tree = parse(NUCLEO_FOR)
     assert tree.children[0].type == "PROGRAM"
-    decls = tree.children[3]
+    top_level = tree.children[3]
+    assert top_level.data == "top_level_items"
+    decls = top_level.children[0].children[0]
     assert decls.data == "decls"
-    idents = [c.value for c in decls.children[1].children if c.type == "IDENT"]
+    idents = [c.value for c in decls.children[1].children[0].children if c.type == "IDENT"]
     assert idents == ["i", "n", "x"]
 
 

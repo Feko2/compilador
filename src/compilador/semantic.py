@@ -1,19 +1,12 @@
 """
-Fase 5 — Análisis Semántico.
+Fase 5 — Análisis Semántico (con arreglos y funciones).
 
-Responsabilidades:
-1. Construir la TABLA DE SÍMBOLOS a partir de las declaraciones (var).
-2. Verificar que toda variable usada esté declarada.
-3. CHEQUEO DE TIPOS:
-   - Las expresiones aritméticas (+, -, *) operan sobre enteros → producen int.
-   - Las comparaciones (>, <, >=) operan sobre enteros → producen bool.
-   - El operador "and" requiere que AMBOS operandos sean booleanos.
-   - Si una ExprCond aparece (expresión usada como condición), es error
-     porque un int no es un bool. Esto detecta pruebaErrores.txt.
-4. Verificar que write() recibe un int o un string (no un bool).
-
-Errores semánticos se reportan como instancias de Diagnostic con phase="semantic".
-El análisis NO detiene la ejecución al primer error: recopila todos los que encuentre.
+Tabla de símbolos global + ámbitos locales en funciones.
+Chequeos extra:
+- array [N] of int: un solo nombre por declaración
+- arr[i]: i entero, arr declarado como arreglo, bounds en runtime
+- function f(a: int): cuerpo con f := expr como retorno
+- llamada f(x, y): existe, argumentos int, cantidad correcta
 """
 
 from __future__ import annotations
@@ -22,14 +15,17 @@ from dataclasses import dataclass, field
 
 from compilador.ast_nodes import (
     AndCond,
+    ArrayAccess,
     Assign,
     BinOp,
+    Call,
     Comparison,
     Cond,
     Dec,
     Expr,
     ExprCond,
     For,
+    FunctionDef,
     If,
     Inc,
     IntLit,
@@ -42,29 +38,26 @@ from compilador.ast_nodes import (
 )
 from compilador.diagnostic import Diagnostic
 
+TYPE_INT = "int"
+TYPE_ARRAY = "int[]"
+TYPE_BOOL = "bool"
+TYPE_ERROR = "error"
 
-# =============================================================================
-# TABLA DE SÍMBOLOS
-# =============================================================================
 
 @dataclass
 class Symbol:
-    """Entrada en la tabla de símbolos."""
     name: str
-    type_name: str   # "int" por ahora (único tipo del lenguaje)
-    declared: bool = True
+    type_name: str
+    array_size: int | None = None
 
 
 @dataclass
 class SymbolTable:
-    """Tabla de símbolos: mapea nombres de variables a su tipo.
-    
-    En este lenguaje solo hay un scope global (no hay funciones).
-    """
     symbols: dict[str, Symbol] = field(default_factory=dict)
+    functions: dict[str, FunctionDef] = field(default_factory=dict)
 
-    def declare(self, name: str, type_name: str) -> None:
-        self.symbols[name] = Symbol(name=name, type_name=type_name)
+    def declare(self, name: str, type_name: str, *, array_size: int | None = None) -> None:
+        self.symbols[name] = Symbol(name=name, type_name=type_name, array_size=array_size)
 
     def lookup(self, name: str) -> Symbol | None:
         return self.symbols.get(name)
@@ -72,33 +65,20 @@ class SymbolTable:
     def is_declared(self, name: str) -> bool:
         return name in self.symbols
 
+    def copy(self) -> SymbolTable:
+        return SymbolTable(
+            symbols=dict(self.symbols),
+            functions=dict(self.functions),
+        )
 
-# =============================================================================
-# TIPOS DEL SISTEMA DE TIPOS (simplificado)
-# =============================================================================
-
-# Solo dos tipos posibles en este lenguaje:
-TYPE_INT = "int"
-TYPE_BOOL = "bool"   # resultado de comparaciones
-TYPE_STRING = "string"
-TYPE_ERROR = "error"  # usado cuando hay un error, evita cascada
-
-
-# =============================================================================
-# ANALIZADOR SEMÁNTICO
-# =============================================================================
 
 @dataclass
 class SemanticAnalyzer:
-    """Recorre el AST y verifica reglas semánticas.
-    
-    Acumula errores en self.errors (no lanza excepciones).
-    """
     table: SymbolTable = field(default_factory=SymbolTable)
     errors: list[Diagnostic] = field(default_factory=list)
+    _current_function: str | None = None
 
     def _error(self, message: str, hint: str = "") -> None:
-        """Registra un error semántico."""
         self.errors.append(Diagnostic(
             phase="semantic",
             line=1,
@@ -107,27 +87,53 @@ class SemanticAnalyzer:
             hint=hint,
         ))
 
-    # --- Punto de entrada ---------------------------------------------------
-
     def analyze(self, program: Program) -> list[Diagnostic]:
-        """Analiza un programa completo. Devuelve lista de errores (vacía si OK)."""
+        for func in program.functions:
+            if func.name in self.table.functions:
+                self._error(f"Función '{func.name}' definida más de una vez.")
+            self.table.functions[func.name] = func
+
         self._build_symbol_table(program.declarations)
+        for func in program.functions:
+            self._analyze_function(func)
         for stmt in program.body:
             self._check_stmt(stmt)
         return self.errors
 
-    # --- Tabla de símbolos ---------------------------------------------------
-
     def _build_symbol_table(self, declarations: list[VarDecl]) -> None:
         for decl in declarations:
             if self.table.is_declared(decl.name):
+                self._error(f"Variable '{decl.name}' declarada más de una vez.")
+            if decl.array_size is not None and decl.array_size <= 0:
                 self._error(
-                    f"Variable '{decl.name}' declarada más de una vez.",
-                    "Cada variable solo puede declararse una vez en el bloque var.",
+                    f"Tamaño inválido para arreglo '{decl.name}'.",
+                    "Usa un entero positivo: array [N] of int.",
                 )
-            self.table.declare(decl.name, decl.type_name)
+            self.table.declare(
+                decl.name,
+                TYPE_ARRAY if decl.array_size else TYPE_INT,
+                array_size=decl.array_size,
+            )
 
-    # --- Chequeo de sentencias -----------------------------------------------
+    def _analyze_function(self, func: FunctionDef) -> None:
+        local = self.table.copy()
+        local.symbols = dict(self.table.symbols)
+        saved_table = self.table
+        saved_fn = self._current_function
+        self.table = local
+        self._current_function = func.name
+
+        for param in func.params:
+            if self.table.is_declared(param.name):
+                self._error(f"Parámetro '{param.name}' oculta una variable global.")
+            self.table.declare(param.name, TYPE_INT)
+        self.table.declare(func.name, TYPE_INT)
+
+        for stmt in func.body:
+            self._check_stmt(stmt)
+
+        self.table = saved_table
+        self._current_function = saved_fn
 
     def _check_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, Assign):
@@ -144,21 +150,27 @@ class SemanticAnalyzer:
             self._check_inc_dec(stmt)
 
     def _check_assign(self, stmt: Assign) -> None:
-        if not self.table.is_declared(stmt.target):
-            self._error(
-                f"Variable '{stmt.target}' no declarada.",
-                "Declara la variable en el bloque 'var' antes de usarla.",
-            )
-        expr_type = self._type_of_expr(stmt.value)
-        if expr_type == TYPE_BOOL:
-            self._error(
-                f"No se puede asignar un valor booleano a '{stmt.target}' (tipo int).",
-                "Las comparaciones producen bool, no int.",
-            )
+        value_type = self._type_of_expr(stmt.value)
+        if value_type == TYPE_BOOL:
+            self._error("No se puede asignar un valor booleano a una variable int.")
+
+        if isinstance(stmt.target, str):
+            if stmt.target == self._current_function:
+                return
+            if not self.table.is_declared(stmt.target):
+                self._error(f"Variable '{stmt.target}' no declarada.")
+                return
+            sym = self.table.lookup(stmt.target)
+            if sym and sym.type_name == TYPE_ARRAY:
+                self._error(
+                    f"'{stmt.target}' es un arreglo; usa '{stmt.target}[i] := valor'.",
+                )
+        elif isinstance(stmt.target, ArrayAccess):
+            self._check_array_access(stmt.target, for_write=True)
 
     def _check_write(self, stmt: Write) -> None:
         if isinstance(stmt.arg, str):
-            return  # string literal — siempre válido
+            return
         self._type_of_expr(stmt.arg)
 
     def _check_if(self, stmt: If) -> None:
@@ -183,95 +195,106 @@ class SemanticAnalyzer:
     def _check_inc_dec(self, stmt: Inc | Dec) -> None:
         if not self.table.is_declared(stmt.target):
             op = "++" if isinstance(stmt, Inc) else "--"
-            self._error(
-                f"Variable '{stmt.target}' no declarada (usada con {op}).",
-                "Declara la variable en el bloque 'var'.",
-            )
+            self._error(f"Variable '{stmt.target}' no declarada (usada con {op}).")
+            return
+        sym = self.table.lookup(stmt.target)
+        if sym and sym.type_name == TYPE_ARRAY:
+            self._error(f"No se puede usar ++/-- sobre el arreglo '{stmt.target}'.")
 
-    # --- Chequeo de condiciones ----------------------------------------------
+    def _check_array_access(self, access: ArrayAccess, *, for_write: bool = False) -> None:
+        if not self.table.is_declared(access.name):
+            self._error(f"Arreglo '{access.name}' no declarado.")
+            return
+        sym = self.table.lookup(access.name)
+        if sym and sym.type_name != TYPE_ARRAY:
+            self._error(f"'{access.name}' no es un arreglo.")
+        idx_type = self._type_of_expr(access.index)
+        if idx_type != TYPE_INT:
+            self._error("El índice de un arreglo debe ser entero.")
+
+    def _check_call(self, call: Call) -> str:
+        func = self.table.functions.get(call.name)
+        if func is None:
+            self._error(
+                f"Función '{call.name}' no definida.",
+                "Declara la función antes del begin; del programa principal.",
+            )
+            return TYPE_ERROR
+        if len(call.args) != len(func.params):
+            self._error(
+                f"Función '{call.name}' espera {len(func.params)} argumento(s), "
+                f"recibió {len(call.args)}.",
+            )
+        for arg in call.args:
+            arg_type = self._type_of_expr(arg)
+            if arg_type != TYPE_INT:
+                self._error(f"Argumento de '{call.name}' debe ser int.")
+        return TYPE_INT
 
     def _check_condition(self, cond: Cond) -> str:
-        """Verifica una condición y devuelve su tipo (debe ser bool)."""
         if isinstance(cond, Comparison):
             left_t = self._type_of_expr(cond.left)
             right_t = self._type_of_expr(cond.right)
-            if left_t != TYPE_INT or right_t != TYPE_INT:
-                self._error(
-                    f"Comparación '{cond.op}' requiere operandos enteros.",
-                    "Ambos lados de una comparación deben ser de tipo int.",
-                )
+            if left_t not in (TYPE_INT, TYPE_ERROR) or right_t not in (TYPE_INT, TYPE_ERROR):
+                self._error(f"Comparación '{cond.op}' requiere operandos enteros.")
             return TYPE_BOOL
 
-        elif isinstance(cond, AndCond):
+        if isinstance(cond, AndCond):
             left_t = self._check_condition(cond.left)
             right_t = self._check_condition(cond.right)
             if left_t != TYPE_BOOL:
-                self._error(
-                    "El operando izquierdo de 'and' no es booleano.",
-                    "Usa una comparación (>, <, >=) para obtener un valor booleano.",
-                )
+                self._error("El operando izquierdo de 'and' no es booleano.")
             if right_t != TYPE_BOOL:
-                self._error(
-                    "El operando derecho de 'and' no es booleano.",
-                    "Usa una comparación (>, <, >=) en lugar de una expresión aritmética.",
-                )
+                self._error("El operando derecho de 'and' no es booleano.")
             return TYPE_BOOL
 
-        elif isinstance(cond, ExprCond):
+        if isinstance(cond, ExprCond):
             expr_t = self._type_of_expr(cond.expr)
             if expr_t != TYPE_BOOL:
                 self._error(
                     "Se usa una expresión entera donde se espera una condición booleana.",
-                    "Una expresión aritmética no es una condición válida. "
-                    "Usa una comparación como (x > 0) o (x < y).",
                 )
                 return TYPE_ERROR
             return TYPE_BOOL
 
         return TYPE_ERROR
 
-    # --- Inferencia de tipos de expresiones ----------------------------------
-
     def _type_of_expr(self, expr: Expr) -> str:
-        """Devuelve el tipo de una expresión; reporta errores si hay variables no declaradas."""
         if isinstance(expr, IntLit):
             return TYPE_INT
 
-        elif isinstance(expr, Var):
+        if isinstance(expr, Var):
             if not self.table.is_declared(expr.name):
+                self._error(f"Variable '{expr.name}' no declarada.")
+                return TYPE_ERROR
+            sym = self.table.lookup(expr.name)
+            if sym and sym.type_name == TYPE_ARRAY:
                 self._error(
-                    f"Variable '{expr.name}' no declarada.",
-                    "Declara la variable en el bloque 'var' antes de usarla.",
+                    f"'{expr.name}' es un arreglo; usa '{expr.name}[i]' para leer un elemento.",
                 )
                 return TYPE_ERROR
-            return self.table.lookup(expr.name).type_name
+            return TYPE_INT
 
-        elif isinstance(expr, BinOp):
+        if isinstance(expr, ArrayAccess):
+            self._check_array_access(expr)
+            return TYPE_INT
+
+        if isinstance(expr, Call):
+            return self._check_call(expr)
+
+        if isinstance(expr, BinOp):
             left_t = self._type_of_expr(expr.left)
             right_t = self._type_of_expr(expr.right)
             if left_t != TYPE_INT or right_t != TYPE_INT:
-                if left_t != TYPE_ERROR and right_t != TYPE_ERROR:
-                    self._error(
-                        f"Operador '{expr.op}' requiere operandos enteros.",
-                        "Las operaciones aritméticas solo funcionan con int.",
-                    )
+                if TYPE_ERROR not in (left_t, right_t):
+                    self._error(f"Operador '{expr.op}' requiere operandos enteros.")
                 return TYPE_ERROR
             return TYPE_INT
 
         return TYPE_ERROR
 
 
-# =============================================================================
-# API PÚBLICA
-# =============================================================================
-
 def analyze(program: Program) -> tuple[SymbolTable, list[Diagnostic]]:
-    """Ejecuta el análisis semántico completo.
-    
-    Devuelve:
-        - La tabla de símbolos construida
-        - Lista de errores semánticos (vacía si todo está bien)
-    """
     analyzer = SemanticAnalyzer()
     errors = analyzer.analyze(program)
     return analyzer.table, errors

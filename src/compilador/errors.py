@@ -61,6 +61,7 @@ def _diagnostic_from_unexpected_token(exc: UnexpectedToken) -> Diagnostic:
         ),
         hint=(
             f"Se esperaba uno de: {expected}. "
-            "Si usas if/while/for, la gramática actual (Fase 2) aún no los incluye."
+            "Si usas if/while/for, verifica que la gramática los incluya (Fase 3). "
+            "Para arreglos usa arr[i]; para funciones, decláralas antes del begin;."
         ),
     )

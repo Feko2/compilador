@@ -80,10 +80,16 @@ def build_report(path: Path, *, try_parse: bool = True) -> CompilationReport:
     # Fase 6-7: Ejecución
     result = run(ast)
     report.quadruples = result.quadruples
-    report.memory = [
-        MemoryCell(name=name, type_name="int", value=str(val))
-        for name, val in result.memory.items()
-    ]
+    report.memory = []
+    for name, val in result.memory.items():
+        if isinstance(val, list):
+            report.memory.append(
+                MemoryCell(name=name, type_name="int[]", value=str(val))
+            )
+        else:
+            report.memory.append(
+                MemoryCell(name=name, type_name="int", value=str(val))
+            )
     report.program_output = result.output
     if result.errors:
         report.diagnostics.extend(result.errors)

@@ -1,4 +1,4 @@
-// Terminales compartidos: léxico (Fase 1) y parser núcleo (Fase 2).
+// Terminales compartidos: léxico (Fase 1) y parser (Fases 2+).
 // Orden: literales compuestos (:=, ++, --, >=) antes de prefijos; palabras clave antes de IDENT.
 
 %import common.WS
@@ -18,6 +18,10 @@ THEN: "then"
 ELSE: "else"
 FOR: "for"
 AND: "and"
+// Fase extra — arreglos y funciones
+ARRAY: "array"
+OF: "of"
+FUNCTION: "function"
 
 ASSIGN: ":="
 INC: "++"
@@ -28,6 +32,8 @@ LT: "<"
 PLUS: "+"
 MINUS: "-"
 STAR: "*"
+LBRACK: "["
+RBRACK: "]"
 LPAR: "("
 RPAR: ")"
 LBRACE: "{"

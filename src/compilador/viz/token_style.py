@@ -18,6 +18,9 @@ _KEYWORDS = frozenset(
         "ELSE",
         "FOR",
         "AND",
+        "ARRAY",
+        "OF",
+        "FUNCTION",
     }
 )
 
@@ -32,6 +35,8 @@ _OPERATORS = frozenset(
         "PLUS",
         "MINUS",
         "STAR",
+        "LBRACK",
+        "RBRACK",
     }
 )
 
@@ -44,6 +49,8 @@ _PUNCT = frozenset(
         "SEMICOLON",
         "COMMA",
         "COLON",
+        "LBRACK",
+        "RBRACK",
     }
 )
 

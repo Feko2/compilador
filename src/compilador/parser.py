@@ -1,11 +1,9 @@
 """
-Analizador sintáctico (Fases 2–3).
+Analizador sintáctico (Fases 2–3 + extra).
 
 Fase 2: programa núcleo (var, begin/end, write, :=, expresiones).
 Fase 3: control de flujo (if/then/else, while/do, for).
-
-Utiliza la gramática definida en grammar/program.lark combinada con
-los terminales de lexer/terminals.lark (a través de lark_util).
+Extra:  arreglos (array [N] of int, arr[i]) y funciones (function ...).
 """
 
 from __future__ import annotations

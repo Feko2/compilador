@@ -30,3 +30,22 @@ class MemoryCell:
     name: str
     type_name: str
     value: str
+
+
+@dataclass
+class ArrayInfo:
+    """Arreglo declarado (característica extra): nombre y tamaño fijo."""
+    name: str
+    size: int
+
+
+@dataclass
+class FunctionInfo:
+    """Función declarada (característica extra): nombre, parámetros y tipo de retorno."""
+    name: str
+    params: list[str]
+    return_type: str = "int"
+
+    @property
+    def signature(self) -> str:
+        return f"{self.name}({', '.join(self.params)}) : {self.return_type}"

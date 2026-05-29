@@ -19,7 +19,7 @@ from compilador.lexer import tokenize
 from compilador.parser import parse
 from compilador.semantic import analyze
 from compilador.viz.models import CompilationReport
-from compilador.models import MemoryCell
+from compilador.models import ArrayInfo, FunctionInfo, MemoryCell
 
 
 def build_report(path: Path, *, try_parse: bool = True) -> CompilationReport:
@@ -65,6 +65,21 @@ def build_report(path: Path, *, try_parse: bool = True) -> CompilationReport:
             hint="Posible error interno en la transformación del parse tree.",
         ))
         return report
+
+    # Extras (arreglos y funciones): se capturan del AST aunque fallen fases posteriores.
+    report.arrays = [
+        ArrayInfo(name=d.name, size=d.array_size)
+        for d in ast.declarations
+        if d.array_size is not None
+    ]
+    report.functions = [
+        FunctionInfo(
+            name=f.name,
+            params=[p.name for p in f.params],
+            return_type=f.return_type,
+        )
+        for f in ast.functions
+    ]
 
     # Fase 5: Semántica
     table, sem_errors = analyze(ast)

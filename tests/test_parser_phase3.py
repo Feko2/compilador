@@ -60,13 +60,14 @@ def test_if_structure() -> None:
 # --- Condición con and (pruebaErrores.txt) ----------------------------------
 
 def test_and_condition_parses() -> None:
-    """pruebaErrores.txt tiene (a>b) and (expr): debe parsear sintácticamente."""
+    """pruebaErrores.txt tiene (a>b) and (expr): debe parsear sintácticamente.
+
+    Con la precedencia or < and < not, la condición se anida en un nodo `and_`
+    cuyos operandos son `paren_cond`.
+    """
     tree = parse_file(PRUEBAS / "pruebaErrores.txt")
-    conditions = list(tree.find_data("condition"))
-    assert any(
-        any(child.data == "paren_cond" for child in cond.children if hasattr(child, "data"))
-        for cond in conditions
-    )
+    assert list(tree.find_data("and_")), "debe existir un nodo 'and_'"
+    assert list(tree.find_data("paren_cond")), "debe existir un nodo 'paren_cond'"
 
 
 # --- Fragmentos inline ------------------------------------------------------

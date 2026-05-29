@@ -29,6 +29,8 @@ from compilador.ast_nodes import (
     If,
     Inc,
     IntLit,
+    NotCond,
+    OrCond,
     Program,
     Stmt,
     Var,
@@ -239,13 +241,20 @@ class SemanticAnalyzer:
                 self._error(f"Comparación '{cond.op}' requiere operandos enteros.")
             return TYPE_BOOL
 
-        if isinstance(cond, AndCond):
+        if isinstance(cond, (AndCond, OrCond)):
+            op_name = "and" if isinstance(cond, AndCond) else "or"
             left_t = self._check_condition(cond.left)
             right_t = self._check_condition(cond.right)
             if left_t != TYPE_BOOL:
-                self._error("El operando izquierdo de 'and' no es booleano.")
+                self._error(f"El operando izquierdo de '{op_name}' no es booleano.")
             if right_t != TYPE_BOOL:
-                self._error("El operando derecho de 'and' no es booleano.")
+                self._error(f"El operando derecho de '{op_name}' no es booleano.")
+            return TYPE_BOOL
+
+        if isinstance(cond, NotCond):
+            operand_t = self._check_condition(cond.operand)
+            if operand_t != TYPE_BOOL:
+                self._error("El operando de 'not' no es booleano.")
             return TYPE_BOOL
 
         if isinstance(cond, ExprCond):

@@ -81,11 +81,22 @@ class AndCond:
 
 
 @dataclass(frozen=True)
+class OrCond:
+    left: "Cond"
+    right: "Cond"
+
+
+@dataclass(frozen=True)
+class NotCond:
+    operand: "Cond"
+
+
+@dataclass(frozen=True)
 class ExprCond:
     expr: Expr
 
 
-Cond = Union[Comparison, AndCond, ExprCond]
+Cond = Union[Comparison, AndCond, OrCond, NotCond, ExprCond]
 
 
 # =============================================================================

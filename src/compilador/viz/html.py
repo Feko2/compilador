@@ -297,6 +297,24 @@ def _badge(ok: bool | None) -> str:
     return '<span class="badge badge-pending">n/a</span>'
 
 
+def _section(
+    title: str,
+    body: str,
+    badge_html: str,
+    *,
+    open_: bool = True,
+    count: str = "",
+) -> str:
+    """Sección colapsable (<details>) con título, contador opcional y badge."""
+    open_attr = " open" if open_ else ""
+    count_html = f'<span class="count">{count}</span>' if count else ""
+    return (
+        f'<section><details class="box"{open_attr}>'
+        f'<summary>{title}{count_html}{badge_html}<span class="chev">&#8250;</span></summary>'
+        f"{body}</details></section>"
+    )
+
+
 def _tokens_by_line(tokens: list[Token]) -> dict[int, list[Token]]:
     by_line: dict[int, list[Token]] = {}
     for t in tokens:
@@ -503,14 +521,6 @@ def _render_extras(report: CompilationReport) -> str:
     return "".join(parts)
 
 
-def _render_output(report: CompilationReport) -> str:
-    lines = report.program_output
-    if not lines:
-        return _runtime_empty_reason(report)
-    body = "".join(f"<li>{_escape(line)}</li>" for line in lines)
-    return f'<ul class="console">{body}</ul>'
-
-
 def render_html(report: CompilationReport) -> str:
     lex_ok = bool(report.tokens) and not any(d.phase == "lex" for d in report.diagnostics)
     parse_ok = report.parse_tree is not None and not any(
@@ -555,57 +565,34 @@ def render_html(report: CompilationReport) -> str:
 
       <div class="group">
         <p class="group-title">Resultado</p>
-        <section>
-          <h2>Salida o error {_badge(False if report.diagnostics else True)}</h2>
-          {_render_result(report)}
-        </section>
+        {_section("Output", _render_result(report),
+                  _badge(False if report.diagnostics else True))}
       </div>
 
       <div class="group">
         <p class="group-title">Análisis (léxico y sintáctico)</p>
-        <section>
-          <h2>Código fuente {_badge(lex_ok)}</h2>
-          {_render_source(report)}
-        </section>
-        <section>
-          <details class="box">
-            <summary>Tokens <span class="count">({n_tokens})</span>{_badge(lex_ok)}\
-<span class="chev">&#8250;</span></summary>
-            {_render_tokens_table(report)}
-          </details>
-        </section>
-        <section>
-          <h2>Árbol de parseo {_badge(parse_ok if parse_available else None)}</h2>
-          {parse_section}
-        </section>
+        {_section("Código fuente", _render_source(report), _badge(lex_ok))}
+        {_section("Tokens", _render_tokens_table(report), _badge(lex_ok),
+                  open_=False, count=f"({n_tokens})")}
+        {_section("Árbol de parseo", parse_section,
+                  _badge(parse_ok if parse_available else None))}
       </div>
 
       <div class="group">
         <p class="group-title">Extras (arreglos y funciones)</p>
-        <section>
-          <h2>Arreglos y funciones {extras_badge}</h2>
-          {_render_extras(report)}
-        </section>
+        {_section("Arreglos y funciones", _render_extras(report), extras_badge)}
       </div>
 
       <div class="group">
         <p class="group-title">Código intermedio</p>
-        <section>
-          <h2>Cuádruplos (IR) {_badge(None if not report.quadruples else True)}</h2>
-          {_render_quadruples(report)}
-        </section>
+        {_section("Cuádruplos (IR)", _render_quadruples(report),
+                  _badge(None if not report.quadruples else True))}
       </div>
 
       <div class="group">
         <p class="group-title">Ejecución (runtime)</p>
-        <section>
-          <h2>Memoria (tabla de símbolos) {_badge(None if not report.memory else True)}</h2>
-          {_render_memory(report)}
-        </section>
-        <section>
-          <h2>Salida del programa (write) {_badge(None if not report.program_output else True)}</h2>
-          {_render_output(report)}
-        </section>
+        {_section("Memoria (tabla de símbolos)", _render_memory(report),
+                  _badge(None if not report.memory else True))}
       </div>
     </div>
   </div>

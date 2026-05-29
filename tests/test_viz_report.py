@@ -24,7 +24,7 @@ def test_render_html_has_sections() -> None:
     html = render_html(report)
     assert "Cuádruplos" in html
     assert "Memoria" in html
-    assert "Salida del programa" in html
+    assert "Output" in html
     assert "tok-keyword" in html
 
 

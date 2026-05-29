@@ -71,15 +71,6 @@ body {
   background: linear-gradient(var(--titlebar-top), var(--titlebar-bottom));
   border-bottom: 1px solid var(--titlebar-border);
 }
-.dot {
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18);
-}
-.dot-r { background: #ff5f57; }
-.dot-y { background: #febc2e; }
-.dot-g { background: #28c840; }
 .term-title {
   position: absolute;
   left: 0; right: 0;
@@ -144,6 +135,34 @@ section h2::before {
   margin-right: 0.5rem;
   font-weight: 600;
 }
+/* Collapsible section (e.g. tokens) */
+details.box > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+}
+details.box > summary::-webkit-details-marker { display: none; }
+details.box > summary::before {
+  content: "%";
+  color: var(--prompt);
+  margin-right: 0.5rem;
+  font-weight: 600;
+}
+details.box > summary .chev {
+  margin-left: 0.6rem;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+details.box[open] > summary .chev { transform: rotate(90deg); }
+details.box > summary .count { color: var(--muted); font-weight: 400; margin-left: 0.4rem; }
+details.box > summary:hover { color: var(--blue); }
 /* status badges */
 .badge {
   display: inline-block;
@@ -377,6 +396,19 @@ def _render_diagnostics(report: CompilationReport) -> str:
     return "".join(parts)
 
 
+def _render_result(report: CompilationReport) -> str:
+    """Resultado final del programa: los errores si los hay, o la salida producida."""
+    if report.diagnostics:
+        return _render_diagnostics(report)
+    if report.program_output:
+        body = "".join(f"<li>{_escape(line)}</li>" for line in report.program_output)
+        return f'<ul class="console">{body}</ul>'
+    return (
+        '<p class="empty">El programa compiló sin errores y no produjo salida '
+        "(no hay sentencias write).</p>"
+    )
+
+
 def _render_tokens_table(report: CompilationReport) -> str:
     if not report.tokens:
         return '<p class="empty">Sin tokens (error léxico previo).</p>'
@@ -513,9 +545,6 @@ def render_html(report: CompilationReport) -> str:
 <body>
   <div class="term">
     <div class="term-bar">
-      <span class="dot dot-r"></span>
-      <span class="dot dot-y"></span>
-      <span class="dot dot-g"></span>
       <span class="term-title">compilador — {name}</span>
     </div>
     <div class="term-body">
@@ -525,10 +554,10 @@ def render_html(report: CompilationReport) -> str:
 <span class="pct">%</span> compilar {_escape(name)}<span class="cursor"></span></p>
 
       <div class="group">
-        <p class="group-title">Diagnóstico</p>
+        <p class="group-title">Resultado</p>
         <section>
-          <h2>Errores {_badge(False if report.diagnostics else True)}</h2>
-          {_render_diagnostics(report)}
+          <h2>Salida o error {_badge(False if report.diagnostics else True)}</h2>
+          {_render_result(report)}
         </section>
       </div>
 
@@ -539,8 +568,11 @@ def render_html(report: CompilationReport) -> str:
           {_render_source(report)}
         </section>
         <section>
-          <h2>Tokens {_badge(lex_ok)}</h2>
-          {_render_tokens_table(report)}
+          <details class="box">
+            <summary>Tokens <span class="count">({n_tokens})</span>{_badge(lex_ok)}\
+<span class="chev">&#8250;</span></summary>
+            {_render_tokens_table(report)}
+          </details>
         </section>
         <section>
           <h2>Árbol de parseo {_badge(parse_ok if parse_available else None)}</h2>

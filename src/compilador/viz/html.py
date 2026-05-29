@@ -14,222 +14,227 @@ from compilador.viz.token_style import css_class_for_token
 
 _CSS = """
 :root {
-  --bg: #05070a;
-  --crt: #0a0f0c;
-  --panel: #0b110d;
-  --green: #3bff84;
-  --green-dim: #1f9d52;
-  --text: #c8f7d8;
-  --muted: #5f7d6b;
-  --line: #14361f;
-  --amber: #ffcc4d;
-  --cyan: #56d4ff;
-  --err-bg: #1c0f10;
-  --err-border: #ff5f56;
+  --bg: #ffffff;
+  --page: #ececec;
+  --titlebar-top: #e8e8e8;
+  --titlebar-bottom: #d4d4d4;
+  --titlebar-border: #b6b6b6;
+  --text: #1d1d1f;
+  --muted: #8a8a8e;
+  --faint: #c7c7cc;
+  --line: #e6e6e8;
+  --line-strong: #d8d8da;
+  --panel-alt: #f6f6f7;
+  --prompt: #1a7f37;
+  --blue: #2a5db0;
+  --err: #c0392b;
+  --err-bg: #fdecea;
+  --err-line: #f4cfca;
+  /* Syntax: muted, tasteful (no neon) */
+  --kw: #9c3fb4;
+  --str: #b5402f;
+  --num: #2a5db0;
+  --op: #6f6f73;
+  --punct: #b0b0b3;
+  --ident: #1d1d1f;
+  --other: #8a6d3b;
 }
 * { box-sizing: border-box; }
-html { background: var(--bg); }
+html { background: var(--page); }
 body {
-  font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
-  background:
-    radial-gradient(ellipse at 50% 0%, #0c1611 0%, var(--bg) 70%);
+  font-family: "SF Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, "Cascadia Code", Consolas, monospace;
+  background: var(--page);
   color: var(--text);
   margin: 0;
-  padding: 2rem 1.25rem;
-  line-height: 1.5;
-  font-size: 14px;
-  min-height: 100vh;
+  padding: 2.4rem 1.25rem 3rem;
+  line-height: 1.55;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
 }
-/* CRT scanlines + flicker overlay */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.18) 0px,
-    rgba(0, 0, 0, 0.18) 1px,
-    transparent 2px,
-    transparent 3px
-  );
-  mix-blend-mode: multiply;
-  z-index: 9999;
-  animation: flicker 4s infinite steps(60);
-}
-@keyframes flicker {
-  0%, 96%, 100% { opacity: 1; }
-  97% { opacity: 0.82; }
-  98% { opacity: 0.96; }
-}
-/* Terminal window */
+/* macOS terminal window */
 .term {
-  max-width: 1080px;
+  max-width: 1000px;
   margin: 0 auto;
-  background: var(--crt);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow:
-    0 0 0 1px rgba(59, 255, 132, 0.06),
-    0 24px 60px rgba(0, 0, 0, 0.7),
-    0 0 80px rgba(31, 157, 82, 0.08);
+  background: var(--bg);
+  border: 1px solid var(--titlebar-border);
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.10);
   overflow: hidden;
 }
 .term-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0.85rem;
-  background: linear-gradient(#10160f, #0a0e0a);
+  height: 38px;
+  padding: 0 0.85rem;
+  background: linear-gradient(var(--titlebar-top), var(--titlebar-bottom));
+  border-bottom: 1px solid var(--titlebar-border);
+}
+.dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+}
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.term-title {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  color: #5b5b5f;
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+.term-body { padding: 1.1rem 1.5rem 1.8rem; }
+/* macOS shell greeting + prompt */
+.login { color: var(--muted); font-size: 0.8rem; margin: 0 0 0.15rem; }
+.prompt { font-size: 0.86rem; margin: 0 0 1.4rem; color: var(--text); }
+.prompt .user { color: var(--prompt); }
+.prompt .path { color: var(--blue); }
+.prompt .pct { color: var(--muted); }
+.cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1.05em;
+  background: var(--text);
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  animation: blink 1.1s steps(2, start) infinite;
+}
+@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+.meta .ok { color: var(--prompt); }
+.meta .bad { color: var(--err); }
+/* Group dividers for organization */
+.group { margin: 1.8rem 0 0.4rem; }
+.group:first-of-type { margin-top: 0.6rem; }
+.group-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.7rem;
+  padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--line);
 }
-.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-.dot-r { background: #ff5f56; }
-.dot-y { background: #ffbd2e; }
-.dot-g { background: #27c93f; }
-.term-title {
-  margin-left: 0.6rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
-}
-.term-body { padding: 1.4rem 1.6rem 2rem; }
-/* Boot banner */
-.banner {
-  color: var(--green);
-  text-shadow: 0 0 8px rgba(59, 255, 132, 0.45);
-  white-space: pre;
-  font-size: 0.82rem;
-  line-height: 1.2;
-  margin: 0 0 0.75rem;
-}
-h1 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.25rem;
-  color: var(--green);
-  text-shadow: 0 0 6px rgba(59, 255, 132, 0.4);
-}
-.meta { color: var(--muted); font-size: 0.82rem; margin: 0 0 1.5rem; }
-.meta .ok { color: var(--green); }
-.meta .bad { color: var(--err-border); }
-.meta::before { content: "$ "; color: var(--green-dim); }
 section {
-  background: var(--panel);
+  background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  padding: 0.5rem 1.1rem 1.1rem;
+  border-radius: 8px;
+  margin-bottom: 0.8rem;
+  padding: 0.7rem 1rem 1rem;
 }
 section h2 {
-  font-size: 0.86rem;
-  margin: 0 0 0.85rem;
-  padding: 0.45rem 0 0.5rem;
-  color: var(--green);
-  border-bottom: 1px dashed var(--line);
-  letter-spacing: 0.02em;
+  font-size: 0.82rem;
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.5rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
   font-weight: 600;
+  display: flex;
+  align-items: center;
 }
 section h2::before {
-  content: "user@compilador:~$ ";
-  color: var(--green-dim);
-  font-weight: 400;
+  content: "%";
+  color: var(--prompt);
+  margin-right: 0.5rem;
+  font-weight: 600;
 }
-/* Bracketed status badges */
+/* status badges */
 .badge {
   display: inline-block;
-  font-size: 0.72rem;
-  margin-left: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 0.68rem;
+  margin-left: auto;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.05rem 0.45rem;
+  border-radius: 4px;
 }
-.badge-ok { color: var(--green); }
-.badge-warn { color: var(--err-border); }
-.badge-pending { color: var(--muted); }
+.badge-ok { color: var(--prompt); background: rgba(26, 127, 55, 0.10); }
+.badge-warn { color: var(--err); background: rgba(192, 57, 43, 0.10); }
+.badge-pending { color: var(--muted); background: var(--panel-alt); }
 .source-wrap { overflow-x: auto; }
-.source {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 0.82rem;
-}
+.source { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
 .source td { vertical-align: top; padding: 0 0.35rem; }
 .source .ln {
-  color: var(--green-dim);
+  color: var(--faint);
   text-align: right;
   user-select: none;
   width: 2.5rem;
-  padding-right: 0.75rem;
-  opacity: 0.7;
+  padding-right: 0.85rem;
 }
 .source .code { white-space: pre; }
 .source tr.error-line { background: var(--err-bg); }
-.source tr.error-line .ln { color: var(--err-border); font-weight: bold; opacity: 1; }
-.err-marker { color: var(--err-border); font-size: 0.78rem; }
+.source tr.error-line .ln { color: var(--err); font-weight: 600; }
+.err-marker { color: var(--err); font-size: 0.78rem; white-space: pre; }
 .diag {
-  border-left: 3px solid var(--err-border);
+  border-left: 3px solid var(--err);
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
   background: var(--err-bg);
+  border-radius: 0 5px 5px 0;
 }
-.diag strong { color: var(--err-border); }
-.diag .hint { color: var(--muted); margin-top: 0.35rem; font-size: 0.8rem; }
-.diag .hint::before { content: "↳ "; }
-.tok-keyword { color: #ff7b72; font-weight: 600; }
-.tok-operator { color: #d2a8ff; }
-.tok-punct { color: var(--muted); }
-.tok-ident { color: var(--cyan); }
-.tok-integer { color: var(--amber); }
-.tok-string { color: var(--green); }
-.tok-other { color: #ffa657; }
-table.data {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
+.diag strong { color: var(--err); }
+.diag .hint { color: #7a6a52; margin-top: 0.35rem; font-size: 0.8rem; }
+.diag .hint::before { content: "\\21B3  "; }
+.tok-keyword { color: var(--kw); }
+.tok-operator { color: var(--op); }
+.tok-punct { color: var(--punct); }
+.tok-ident { color: var(--ident); }
+.tok-integer { color: var(--num); }
+.tok-string { color: var(--str); }
+.tok-other { color: var(--other); }
+table.data { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 table.data th, table.data td {
-  border: 1px solid var(--line);
-  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.4rem 0.6rem;
   text-align: left;
 }
-table.data th {
-  color: var(--green);
+table.data thead th {
+  color: var(--muted);
   font-weight: 600;
-  background: rgba(31, 157, 82, 0.06);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--panel-alt);
 }
-table.data tr:hover td { background: rgba(59, 255, 132, 0.04); }
+table.data tbody tr:last-child td { border-bottom: none; }
+table.data tbody tr:hover td { background: var(--panel-alt); }
 pre.tree {
   margin: 0;
   font-size: 0.78rem;
   overflow-x: auto;
   white-space: pre;
-  color: var(--text);
+  color: #4b4b50;
 }
-/* Program output as a console pane */
+/* program output console pane */
 ul.console {
   list-style: none;
   margin: 0;
-  padding: 0.75rem 0.9rem;
-  background: #04060a;
+  padding: 0.7rem 0.85rem;
+  background: var(--panel-alt);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 ul.console li { white-space: pre-wrap; }
-ul.console li::before { content: "» "; color: var(--green-dim); }
-.empty { color: var(--muted); font-style: italic; font-size: 0.85rem; }
-.empty::before { content: "// "; }
-.legend { font-size: 0.75rem; color: var(--muted); margin-top: 0.6rem; }
-.legend span { margin-right: 0.75rem; }
-.cursor {
-  display: inline-block;
-  width: 0.55em;
-  height: 1em;
-  background: var(--green);
-  margin-left: 2px;
-  vertical-align: text-bottom;
-  animation: blink 1.1s steps(2, start) infinite;
-  box-shadow: 0 0 6px rgba(59, 255, 132, 0.6);
+ul.console li::before { content: "\\203A  "; color: var(--prompt); }
+.empty { color: var(--muted); font-size: 0.84rem; margin: 0.2rem 0; }
+.empty::before { content: "# "; color: var(--faint); }
+.subhead {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin: 0.9rem 0 0.4rem;
 }
-@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+.subhead:first-child { margin-top: 0; }
+.legend { font-size: 0.74rem; color: var(--muted); margin-top: 0.7rem; }
+.legend span { margin-right: 0.85rem; }
 """
 
 _PENDING = (
@@ -267,10 +272,10 @@ def _escape(s: str) -> str:
 
 def _badge(ok: bool | None) -> str:
     if ok is True:
-        return '<span class="badge badge-ok">[  OK  ]</span>'
+        return '<span class="badge badge-ok">ok</span>'
     if ok is False:
-        return '<span class="badge badge-warn">[ FAIL ]</span>'
-    return '<span class="badge badge-pending">[ ---- ]</span>'
+        return '<span class="badge badge-warn">error</span>'
+    return '<span class="badge badge-pending">n/a</span>'
 
 
 def _tokens_by_line(tokens: list[Token]) -> dict[int, list[Token]]:
@@ -346,11 +351,12 @@ def _render_source(report: CompilationReport) -> str:
 
     legend = (
         '<p class="legend">'
-        '<span class="tok-keyword">palabra clave</span> '
-        '<span class="tok-ident">identificador</span> '
-        '<span class="tok-integer">entero</span> '
-        '<span class="tok-string">cadena</span> '
+        '<span class="tok-keyword">palabra clave</span>'
+        '<span class="tok-ident">identificador</span>'
+        '<span class="tok-integer">entero</span>'
+        '<span class="tok-string">cadena</span>'
         '<span class="tok-operator">operador</span>'
+        '<span class="tok-punct">puntuación</span>'
         "</p>"
     )
     return (
@@ -422,6 +428,49 @@ def _render_memory(report: CompilationReport) -> str:
     )
 
 
+def _render_extras(report: CompilationReport) -> str:
+    if not report.arrays and not report.functions:
+        return (
+            '<p class="empty">Este programa no usa arreglos ni funciones '
+            "(características extra).</p>"
+        )
+
+    parts: list[str] = []
+
+    if report.arrays:
+        rows = "".join(
+            f"<tr><td class=\"tok-ident\">{_escape(a.name)}</td>"
+            f"<td>{a.size}</td><td>0 .. {a.size - 1}</td></tr>"
+            for a in report.arrays
+        )
+        parts.append('<p class="subhead">Arreglos</p>')
+        parts.append(
+            "<table class=\"data\"><thead><tr><th>Nombre</th><th>Tamaño</th>"
+            f"<th>Índices válidos</th></tr></thead><tbody>{rows}</tbody></table>"
+        )
+    else:
+        parts.append('<p class="subhead">Arreglos</p>')
+        parts.append('<p class="empty">Ninguno declarado.</p>')
+
+    if report.functions:
+        rows = "".join(
+            f"<tr><td class=\"tok-ident\">{_escape(f.name)}</td>"
+            f"<td class=\"tok-keyword\">{_escape(f.signature)}</td>"
+            f"<td>{len(f.params)}</td></tr>"
+            for f in report.functions
+        )
+        parts.append('<p class="subhead">Funciones</p>')
+        parts.append(
+            "<table class=\"data\"><thead><tr><th>Nombre</th><th>Firma</th>"
+            f"<th>Parámetros</th></tr></thead><tbody>{rows}</tbody></table>"
+        )
+    else:
+        parts.append('<p class="subhead">Funciones</p>')
+        parts.append('<p class="empty">Ninguna declarada.</p>')
+
+    return "".join(parts)
+
+
 def _render_output(report: CompilationReport) -> str:
     lines = report.program_output
     if not lines:
@@ -444,19 +493,15 @@ def render_html(report: CompilationReport) -> str:
 
     name = _escape(Path(report.source_path).name)
     status_html = (
-        '<span class="ok">OK</span>'
+        '<span class="ok">ok</span>'
         if report.ok
-        else '<span class="bad">CON ERRORES</span>'
+        else '<span class="bad">con errores</span>'
     )
     n_tokens = len(report.tokens)
     n_diag = len(report.diagnostics)
-    banner = _escape(
-        r"""   ___                _ _           _
-  / __\___  _ __ ___ | (_) | __ _  __| | ___  _ __
- / /  / _ \| '_ ` _ \| | | |/ _` |/ _` |/ _ \| '__|
-/ /__| (_) | | | | | | | | | (_| | (_| | (_) | |
-\____/\___/|_| |_| |_|_|_|_|\__,_|\__,_|\___/|_|"""
-    )
+    has_extras = bool(report.arrays or report.functions)
+    extras_badge = _badge(True if has_extras else None)
+    parse_available = report.phases_available.get("parse")
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -471,48 +516,65 @@ def render_html(report: CompilationReport) -> str:
       <span class="dot dot-r"></span>
       <span class="dot dot-y"></span>
       <span class="dot dot-g"></span>
-      <span class="term-title">compilador — report — {name}</span>
+      <span class="term-title">compilador — {name}</span>
     </div>
     <div class="term-body">
-      <pre class="banner">{banner}</pre>
-      <h1>Informe de compilación</h1>
-      <p class="meta">compilar {_escape(report.source_path)} \u2014 estado: {status_html} \u2014 \
-{n_tokens} tokens, {n_diag} diagnóstico(s)<span class="cursor"></span></p>
+      <p class="login">Informe de compilación &middot; {n_tokens} tokens &middot; \
+{n_diag} diagnóstico(s) &middot; estado: <span class="meta">{status_html}</span></p>
+      <p class="prompt"><span class="user">compilador</span> <span class="path">~</span> \
+<span class="pct">%</span> compilar {_escape(name)}<span class="cursor"></span></p>
 
-      <section>
-        <h2>Errores {_badge(False if report.diagnostics else True)}</h2>
-        {_render_diagnostics(report)}
-      </section>
+      <div class="group">
+        <p class="group-title">Diagnóstico</p>
+        <section>
+          <h2>Errores {_badge(False if report.diagnostics else True)}</h2>
+          {_render_diagnostics(report)}
+        </section>
+      </div>
 
-      <section>
-        <h2>Código fuente (tokens coloreados) {_badge(lex_ok)}</h2>
-        {_render_source(report)}
-      </section>
+      <div class="group">
+        <p class="group-title">Análisis (léxico y sintáctico)</p>
+        <section>
+          <h2>Código fuente {_badge(lex_ok)}</h2>
+          {_render_source(report)}
+        </section>
+        <section>
+          <h2>Tokens {_badge(lex_ok)}</h2>
+          {_render_tokens_table(report)}
+        </section>
+        <section>
+          <h2>Árbol de parseo {_badge(parse_ok if parse_available else None)}</h2>
+          {parse_section}
+        </section>
+      </div>
 
-      <section>
-        <h2>Tokens {_badge(lex_ok)}</h2>
-        {_render_tokens_table(report)}
-      </section>
+      <div class="group">
+        <p class="group-title">Extras (arreglos y funciones)</p>
+        <section>
+          <h2>Arreglos y funciones {extras_badge}</h2>
+          {_render_extras(report)}
+        </section>
+      </div>
 
-      <section>
-        <h2>Árbol de parseo {_badge(parse_ok if report.phases_available.get("parse") else None)}</h2>
-        {parse_section}
-      </section>
+      <div class="group">
+        <p class="group-title">Código intermedio</p>
+        <section>
+          <h2>Cuádruplos (IR) {_badge(None if not report.quadruples else True)}</h2>
+          {_render_quadruples(report)}
+        </section>
+      </div>
 
-      <section>
-        <h2>Cuádruplos (IR) {_badge(None if not report.quadruples else True)}</h2>
-        {_render_quadruples(report)}
-      </section>
-
-      <section>
-        <h2>Memoria (tabla de símbolos / runtime) {_badge(None if not report.memory else True)}</h2>
-        {_render_memory(report)}
-      </section>
-
-      <section>
-        <h2>Salida del programa (write) {_badge(None if not report.program_output else True)}</h2>
-        {_render_output(report)}
-      </section>
+      <div class="group">
+        <p class="group-title">Ejecución (runtime)</p>
+        <section>
+          <h2>Memoria (tabla de símbolos) {_badge(None if not report.memory else True)}</h2>
+          {_render_memory(report)}
+        </section>
+        <section>
+          <h2>Salida del programa (write) {_badge(None if not report.program_output else True)}</h2>
+          {_render_output(report)}
+        </section>
+      </div>
     </div>
   </div>
 </body>

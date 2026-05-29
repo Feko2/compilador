@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from lark import Token
 
 from compilador.diagnostic import Diagnostic
-from compilador.models import MemoryCell, Quadruple  # noqa: F401 — re-export
+from compilador.models import ArrayInfo, FunctionInfo, MemoryCell, Quadruple  # noqa: F401 — re-export
 
 
 @dataclass
@@ -21,6 +21,8 @@ class CompilationReport:
     quadruples: list[Quadruple] = field(default_factory=list)
     memory: list[MemoryCell] = field(default_factory=list)
     program_output: list[str] = field(default_factory=list)
+    arrays: list[ArrayInfo] = field(default_factory=list)
+    functions: list[FunctionInfo] = field(default_factory=list)
     phases_available: dict[str, bool] = field(default_factory=dict)
 
     @property

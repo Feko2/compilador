@@ -27,6 +27,8 @@ from compilador.ast_nodes import (
     Inc,
     IntLit,
     LValue,
+    NotCond,
+    OrCond,
     Param,
     Program,
     Stmt,
@@ -37,7 +39,11 @@ from compilador.ast_nodes import (
 )
 from compilador.parser import parse as lark_parse
 
-_OP_TOKENS = frozenset({"PLUS", "MINUS", "STAR", "GT", "LT", "GE"})
+_OP_TOKENS = frozenset({
+    "PLUS", "MINUS", "STAR", "SLASH", "PERCENT",
+    "GT", "LT", "GE", "LE", "EQ", "NE",
+})
+_LOGIC_TOKENS = frozenset({"AND", "OR", "NOT"})
 _PUNCT_TOKENS = frozenset({"LPAR", "RPAR", "LBRACE", "RBRACE", "LBRACK", "RBRACK", "COMMA", "SEMICOLON", "COLON"})
 
 
@@ -175,12 +181,20 @@ class ASTBuilder(Transformer):
 
     # --- Condiciones ---------------------------------------------------------
 
-    def condition(self, children):
-        atoms = [c for c in children if not isinstance(c, Token)]
-        result = atoms[0]
-        for atom in atoms[1:]:
-            result = AndCond(left=result, right=atom)
-        return result
+    def and_(self, children):
+        left, right = self._extract_cond_operands(children)
+        return AndCond(left=left, right=right)
+
+    def or_(self, children):
+        left, right = self._extract_cond_operands(children)
+        return OrCond(left=left, right=right)
+
+    def not_(self, children):
+        operand = next(
+            c for c in children
+            if not (isinstance(c, Token) and c.type in _LOGIC_TOKENS)
+        )
+        return NotCond(operand=operand)
 
     def paren_cond(self, children):
         return children[1]
@@ -196,6 +210,18 @@ class ASTBuilder(Transformer):
     def cmp_ge(self, children):
         left, right = self._extract_cmp_operands(children)
         return Comparison(op=">=", left=left, right=right)
+
+    def cmp_le(self, children):
+        left, right = self._extract_cmp_operands(children)
+        return Comparison(op="<=", left=left, right=right)
+
+    def cmp_eq(self, children):
+        left, right = self._extract_cmp_operands(children)
+        return Comparison(op="==", left=left, right=right)
+
+    def cmp_ne(self, children):
+        left, right = self._extract_cmp_operands(children)
+        return Comparison(op="!=", left=left, right=right)
 
     def expr_cond(self, children):
         return ExprCond(expr=self._to_expr(children[0]))
@@ -213,6 +239,21 @@ class ASTBuilder(Transformer):
     def mul(self, children):
         left, right = self._extract_bin_operands(children)
         return BinOp(op="*", left=left, right=right)
+
+    def div(self, children):
+        left, right = self._extract_bin_operands(children)
+        return BinOp(op="/", left=left, right=right)
+
+    def mod(self, children):
+        left, right = self._extract_bin_operands(children)
+        return BinOp(op="%", left=left, right=right)
+
+    def neg(self, children):
+        operand = next(
+            c for c in children
+            if not (isinstance(c, Token) and c.type == "MINUS")
+        )
+        return BinOp(op="-", left=IntLit(value=0), right=self._to_expr(operand))
 
     def call(self, children):
         name = children[0].value
@@ -239,6 +280,13 @@ class ASTBuilder(Transformer):
         tok = children[0]
         return IntLit(value=int(tok.value)) if isinstance(tok, Token) else tok
 
+    def paren(self, children):
+        inner = next(
+            c for c in children
+            if not (isinstance(c, Token) and c.type in {"LPAR", "RPAR"})
+        )
+        return self._to_expr(inner)
+
     def __default_token__(self, token):
         return token
 
@@ -249,6 +297,13 @@ class ASTBuilder(Transformer):
             self._to_expr(c)
             for c in children
             if not (isinstance(c, Token) and c.type in _OP_TOKENS)
+        ]
+        return operands[0], operands[1]
+
+    def _extract_cond_operands(self, children):
+        operands = [
+            c for c in children
+            if not (isinstance(c, Token) and c.type in _LOGIC_TOKENS)
         ]
         return operands[0], operands[1]
 

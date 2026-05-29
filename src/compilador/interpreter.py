@@ -33,6 +33,8 @@ from compilador.ast_nodes import (
     Inc,
     IntLit,
     LValue,
+    NotCond,
+    OrCond,
     Program,
     Stmt,
     Var,
@@ -185,10 +187,22 @@ class Interpreter:
                 return left < right
             if cond.op == ">=":
                 return left >= right
+            if cond.op == "<=":
+                return left <= right
+            if cond.op == "==":
+                return left == right
+            if cond.op == "!=":
+                return left != right
             raise RuntimeError(f"Operador de comparación desconocido: {cond.op}")
 
         if isinstance(cond, AndCond):
             return self._eval_condition(cond.left) and self._eval_condition(cond.right)
+
+        if isinstance(cond, OrCond):
+            return self._eval_condition(cond.left) or self._eval_condition(cond.right)
+
+        if isinstance(cond, NotCond):
+            return not self._eval_condition(cond.operand)
 
         if isinstance(cond, ExprCond):
             return self._eval_expr(cond.expr) != 0
@@ -223,6 +237,14 @@ class Interpreter:
                 return left - right
             if expr.op == "*":
                 return left * right
+            if expr.op == "/":
+                if right == 0:
+                    raise RuntimeError("División por cero.")
+                return int(left / right)
+            if expr.op == "%":
+                if right == 0:
+                    raise RuntimeError("Módulo por cero.")
+                return left - int(left / right) * right
             raise RuntimeError(f"Operador aritmético desconocido: {expr.op}")
 
         raise RuntimeError(f"Tipo de expresión desconocido: {type(expr)}")

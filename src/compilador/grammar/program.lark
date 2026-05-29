@@ -1,9 +1,9 @@
 // ============================================================================
-// GRAMÁTICA COMPLETA — Fases 2, 3 y extra (arreglos + funciones)
+// GRAMÁTICA COMPLETA
 // ============================================================================
-// Fase 2: program, var, begin/end, write, :=, expresiones aritméticas.
-// Fase 3: if/then/else, while/do, for(init;cond;incr), comparaciones, and.
-// Extra:  array [N] of int, arr[i], function f(a: int) : int { ... }
+// program, var, begin/end, write, :=, expresiones aritméticas.
+// if/then/else, while/do, for(init;cond;incr), comparaciones, and.
+// array [N] of int, arr[i], function f(a: int) : int { ... }
 //
 // Los terminales se definen en lexer/terminals.lark.
 
@@ -89,12 +89,25 @@ postfix_stmt: IDENT DEC SEMICOLON -> dec_stmt
 block: LBRACE stmt_list RBRACE
 
 // --- Condiciones (expresiones booleanas) ------------------------------------
-condition: cond_atom (AND cond_atom)* -> condition
+// Precedencia: or < and < not < comparación
+?condition: or_cond
+
+?or_cond: and_cond
+        | or_cond OR and_cond    -> or_
+
+?and_cond: not_cond
+         | and_cond AND not_cond -> and_
+
+?not_cond: cond_atom
+         | NOT not_cond          -> not_
 
 cond_atom: LPAR condition RPAR -> paren_cond
          | expr GT expr        -> cmp_gt
          | expr LT expr        -> cmp_lt
          | expr GE expr        -> cmp_ge
+         | expr LE expr        -> cmp_le
+         | expr EQ expr        -> cmp_eq
+         | expr NE expr        -> cmp_ne
          | expr                -> expr_cond
 
 // --- Expresiones aritméticas ------------------------------------------------
@@ -104,13 +117,18 @@ cond_atom: LPAR condition RPAR -> paren_cond
     | sum PLUS product   -> add
     | sum MINUS product  -> sub
 
-?product: primary
-        | product STAR primary -> mul
+?product: unary
+        | product STAR unary    -> mul
+        | product SLASH unary   -> div
+        | product PERCENT unary -> mod
+
+?unary: primary
+      | MINUS unary -> neg
 
 ?primary: call_expr
         | var_ref
         | INTEGER           -> int_lit
-        | LPAR expr RPAR
+        | LPAR expr RPAR    -> paren
 
 // Llamada a función: suma(3, 4)
 call_expr: IDENT LPAR arg_list? RPAR -> call

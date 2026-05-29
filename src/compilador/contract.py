@@ -1,7 +1,7 @@
 """
-Fase 0 — contrato léxico del lenguaje del compilador.
+Contrato léxico del lenguaje del compilador.
 
-Incluye tokens de pruebas/*.txt (Fases 0–3) y extensiones extra:
+Incluye tokens de pruebas/*.txt y
 - arreglos: array, of, [ ]
 - funciones: function
 """
@@ -23,6 +23,8 @@ KEYWORDS: tuple[str, ...] = (
     "else",
     "for",
     "and",
+    "or",
+    "not",
     # Extra — arreglos y funciones
     "array",
     "of",
@@ -33,12 +35,17 @@ PUNCTUATION_AND_OPERATORS: tuple[str, ...] = (
     ":=",
     "++",
     "--",
+    "==",
+    "!=",
     ">=",
+    "<=",
     ">",
     "<",
     "+",
     "-",
     "*",
+    "/",
+    "%",
     "[",
     "]",
     "(",
@@ -65,18 +72,25 @@ TOKEN_TYPES: tuple[str, ...] = (
     "ELSE",
     "FOR",
     "AND",
+    "OR",
+    "NOT",
     "ARRAY",
     "OF",
     "FUNCTION",
     "ASSIGN",
     "INC",
     "DEC",
+    "EQ",
+    "NE",
     "GE",
+    "LE",
     "GT",
     "LT",
     "PLUS",
     "MINUS",
     "STAR",
+    "SLASH",
+    "PERCENT",
     "LBRACK",
     "RBRACK",
     "LPAR",

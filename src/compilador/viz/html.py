@@ -237,6 +237,29 @@ _PENDING = (
     "El informe mostrará datos aquí cuando esté implementado.</p>"
 )
 
+# Fases que, si fallan, impiden llegar a la ejecución (IR / memoria / salida).
+_PRE_RUNTIME_PHASES = frozenset({"lex", "syntax", "semantic"})
+
+
+def _runtime_empty_reason(report: CompilationReport) -> str:
+    """Explica por qué una sección de runtime (IR/memoria/salida) está vacía."""
+    if not report.phases_available.get("parse", True):
+        return (
+            '<p class="empty">Parser desactivado (--no-parse): no se ejecutó '
+            "la generación de cuádruplos ni el runtime.</p>"
+        )
+    blocking = [d for d in report.diagnostics if d.phase in _PRE_RUNTIME_PHASES]
+    if blocking:
+        phase = blocking[0].phase
+        return (
+            f'<p class="empty">No se generó: la compilación se detuvo por un error '
+            f"de tipo <strong>{_escape(phase)}</strong> antes de la ejecución. "
+            "Corrige los errores de la sección superior para ver esta fase.</p>"
+        )
+    return (
+        '<p class="empty">Sin datos: el programa no produjo resultados en esta fase.</p>'
+    )
+
 
 def _escape(s: str) -> str:
     return html.escape(s, quote=True)
@@ -366,9 +389,10 @@ def _render_tokens_table(report: CompilationReport) -> str:
     )
 
 
-def _render_quadruples(quads: list[Quadruple]) -> str:
+def _render_quadruples(report: CompilationReport) -> str:
+    quads = report.quadruples
     if not quads:
-        return _PENDING
+        return _runtime_empty_reason(report)
     rows = []
     for q in quads:
         rows.append(
@@ -382,9 +406,10 @@ def _render_quadruples(quads: list[Quadruple]) -> str:
     )
 
 
-def _render_memory(cells: list[MemoryCell]) -> str:
+def _render_memory(report: CompilationReport) -> str:
+    cells = report.memory
     if not cells:
-        return _PENDING
+        return _runtime_empty_reason(report)
     rows = []
     for c in cells:
         rows.append(
@@ -397,9 +422,10 @@ def _render_memory(cells: list[MemoryCell]) -> str:
     )
 
 
-def _render_output(lines: list[str]) -> str:
+def _render_output(report: CompilationReport) -> str:
+    lines = report.program_output
     if not lines:
-        return _PENDING
+        return _runtime_empty_reason(report)
     body = "".join(f"<li>{_escape(line)}</li>" for line in lines)
     return f'<ul class="console">{body}</ul>'
 
@@ -475,17 +501,17 @@ def render_html(report: CompilationReport) -> str:
 
       <section>
         <h2>Cuádruplos (IR) {_badge(None if not report.quadruples else True)}</h2>
-        {_render_quadruples(report.quadruples)}
+        {_render_quadruples(report)}
       </section>
 
       <section>
         <h2>Memoria (tabla de símbolos / runtime) {_badge(None if not report.memory else True)}</h2>
-        {_render_memory(report.memory)}
+        {_render_memory(report)}
       </section>
 
       <section>
         <h2>Salida del programa (write) {_badge(None if not report.program_output else True)}</h2>
-        {_render_output(report.program_output)}
+        {_render_output(report)}
       </section>
     </div>
   </div>

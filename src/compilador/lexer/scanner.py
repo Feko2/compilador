@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 
-from lark import Lark, Token
+from lark import Token
 
-_GRAMMAR = (Path(__file__).with_name("tokens.lark")).read_text(encoding="utf-8")
+from compilador.lark_util import open_lark
+
+_TOKENS_LARK = Path(__file__).with_name("tokens.lark")
 
 
-@lru_cache(maxsize=1)
-def _lark() -> Lark:
-    return Lark(_GRAMMAR, parser="lalr", lexer="basic")
+def _lark():
+    return open_lark(_TOKENS_LARK)
 
 
 def tokenize(text: str) -> tuple[Token, ...]:

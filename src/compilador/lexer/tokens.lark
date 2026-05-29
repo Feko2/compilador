@@ -1,48 +1,10 @@
-// Léxico mínimo alineado con `pruebas/*.txt` (Fase 1).
-// Orden: literales compuestos (:=, ++, --, >=) antes de sus prefijos; palabras clave antes de IDENT.
-
-%import common.WS
-%ignore WS
+// Léxico (Fase 1): reglas de volcado; terminales en terminals.lark (compuesto en Python).
 
 start: item+
 item: PROGRAM | MAIN | VAR | INT_KW | BEGIN | END | WRITE | WHILE | DO | IF | THEN | ELSE | FOR | AND
+    | ARRAY | OF | FUNCTION
     | ASSIGN | INC | DEC | GE | GT | LT
     | PLUS | MINUS | STAR
+    | LBRACK | RBRACK
     | LPAR | RPAR | LBRACE | RBRACE | SEMICOLON | COMMA | COLON
     | IDENT | INTEGER | STRING
-
-PROGRAM: "program"
-MAIN: "main"
-VAR: "var"
-INT_KW: "int"
-BEGIN: "begin"
-END: "end"
-WRITE: "write"
-WHILE: "while"
-DO: "do"
-IF: "if"
-THEN: "then"
-ELSE: "else"
-FOR: "for"
-AND: "and"
-
-ASSIGN: ":="
-INC: "++"
-DEC: "--"
-GE: ">="
-GT: ">"
-LT: "<"
-PLUS: "+"
-MINUS: "-"
-STAR: "*"
-LPAR: "("
-RPAR: ")"
-LBRACE: "{"
-RBRACE: "}"
-SEMICOLON: ";"
-COMMA: ","
-COLON: ":"
-
-IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-INTEGER: /\d+/
-STRING: /"([^"\\]|\\.)*"/

@@ -10,7 +10,7 @@ todos:
     status: completed
   - id: phase2-parse-skeleton
     content: Gramática Lark mínima para program main { var ...; begin; ... end; } más write, asignación := y expresiones aritméticas; validar con tests pequeños (fragmentos de pruebas/ sin if/while/for aún).
-    status: pending
+    status: completed
   - id: phase3-parse-control
     content: Extender gramática para if/then/else, while/do y for (...); validar pruebaIf.txt y pruebaWhile.txt.
     status: pending

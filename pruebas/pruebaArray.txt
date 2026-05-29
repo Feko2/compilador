@@ -1,0 +1,15 @@
+program main{
+	var i, sum : int;
+	var nums : array [5] of int;
+	begin;
+		write("prueba arreglo");
+		nums[0] := 10;
+		nums[1] := 20;
+		nums[2] := 30;
+		sum := 0;
+		for (i:=0; i < 3; i++){
+			sum := sum + nums[i];
+		}
+		write(sum);
+	end;
+}

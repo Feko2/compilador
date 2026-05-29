@@ -1,0 +1,47 @@
+// Terminales compartidos: léxico (Fase 1) y parser (Fases 2+).
+// Orden: literales compuestos (:=, ++, --, >=) antes de prefijos; palabras clave antes de IDENT.
+
+%import common.WS
+%ignore WS
+
+PROGRAM: "program"
+MAIN: "main"
+VAR: "var"
+INT_KW: "int"
+BEGIN: "begin"
+END: "end"
+WRITE: "write"
+WHILE: "while"
+DO: "do"
+IF: "if"
+THEN: "then"
+ELSE: "else"
+FOR: "for"
+AND: "and"
+// Fase extra — arreglos y funciones
+ARRAY: "array"
+OF: "of"
+FUNCTION: "function"
+
+ASSIGN: ":="
+INC: "++"
+DEC: "--"
+GE: ">="
+GT: ">"
+LT: "<"
+PLUS: "+"
+MINUS: "-"
+STAR: "*"
+LBRACK: "["
+RBRACK: "]"
+LPAR: "("
+RPAR: ")"
+LBRACE: "{"
+RBRACE: "}"
+SEMICOLON: ";"
+COMMA: ","
+COLON: ":"
+
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+INTEGER: /\d+/
+STRING: /"([^"\\]|\\.)*"/

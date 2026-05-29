@@ -1,13 +1,13 @@
 """
-Fase 0 — contrato léxico derivado solo de `pruebas/*.txt`.
+Fase 0 — contrato léxico del lenguaje del compilador.
 
-No amplía el lenguaje: cualquier token nuevo en los ejemplos del profesor
-debe añadirse aquí y en `lexer/tokens.lark` antes de usarse en fases posteriores.
+Incluye tokens de pruebas/*.txt (Fases 0–3) y extensiones extra:
+- arreglos: array, of, [ ]
+- funciones: function
 """
 
 from __future__ import annotations
 
-# Palabras reservadas que aparecen literalmente en los cuatro archivos de prueba.
 KEYWORDS: tuple[str, ...] = (
     "program",
     "main",
@@ -23,9 +23,12 @@ KEYWORDS: tuple[str, ...] = (
     "else",
     "for",
     "and",
+    # Extra — arreglos y funciones
+    "array",
+    "of",
+    "function",
 )
 
-# Operadores y signos de puntuación visibles en esos mismos archivos.
 PUNCTUATION_AND_OPERATORS: tuple[str, ...] = (
     ":=",
     "++",
@@ -36,6 +39,8 @@ PUNCTUATION_AND_OPERATORS: tuple[str, ...] = (
     "+",
     "-",
     "*",
+    "[",
+    "]",
     "(",
     ")",
     "{",
@@ -45,8 +50,6 @@ PUNCTUATION_AND_OPERATORS: tuple[str, ...] = (
     ":",
 )
 
-# Nombres de tipo de token que expone el analizador (Lark `Token.type`).
-# Útil para tests y para explicar el oral qué sale del léxico.
 TOKEN_TYPES: tuple[str, ...] = (
     "PROGRAM",
     "MAIN",
@@ -62,6 +65,9 @@ TOKEN_TYPES: tuple[str, ...] = (
     "ELSE",
     "FOR",
     "AND",
+    "ARRAY",
+    "OF",
+    "FUNCTION",
     "ASSIGN",
     "INC",
     "DEC",
@@ -71,6 +77,8 @@ TOKEN_TYPES: tuple[str, ...] = (
     "PLUS",
     "MINUS",
     "STAR",
+    "LBRACK",
+    "RBRACK",
     "LPAR",
     "RPAR",
     "LBRACE",

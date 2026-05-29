@@ -1,0 +1,24 @@
+program main{
+	var x, r : int;
+
+	function suma(a, b : int) : int {
+		begin;
+			suma := a + b;
+		end;
+	}
+
+	function cuadrado(n : int) : int {
+		begin;
+			cuadrado := n * n;
+		end;
+	}
+
+	begin;
+		write("prueba funcion");
+		x := suma(3, 4);
+		write(x);
+		r := cuadrado(5);
+		write(r);
+		write(suma(10, cuadrado(2)));
+	end;
+}

@@ -1,5 +1,5 @@
 """
-Fase 4 — Árbol de Sintaxis Abstracta (AST).
+Árbol de Sintaxis Abstracta (AST).
 
 Nodos principales:
     Program
@@ -60,7 +60,9 @@ class Call:
 
 
 Expr = Union[Var, IntLit, BinOp, ArrayAccess, Call]
-LValue = Union[str, ArrayAccess]
+# Un lvalue válido es una variable (str) o un elemento de arreglo (ArrayAccess).
+# IntLit se admite solo para reportar "lvalue inválido" en el análisis semántico.
+LValue = Union[str, ArrayAccess, IntLit]
 
 
 # =============================================================================
@@ -111,6 +113,12 @@ class Assign:
 
 
 @dataclass(frozen=True)
+class CallStmt:
+    """Llamada a función usada como sentencia: proc(); (descarta el retorno)."""
+    call: Call
+
+
+@dataclass(frozen=True)
 class Write:
     arg: Union[Expr, str]
 
@@ -146,7 +154,7 @@ class Dec:
     target: str
 
 
-Stmt = Union[Assign, Write, If, While, For, Inc, Dec]
+Stmt = Union[Assign, CallStmt, Write, If, While, For, Inc, Dec]
 
 
 # =============================================================================

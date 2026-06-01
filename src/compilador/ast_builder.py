@@ -1,5 +1,5 @@
 """
-Fase 4 — Construcción del AST desde el parse tree de Lark.
+Construcción del AST desde el parse tree de Lark.
 
 Transforma bottom-up el árbol de parseo en nodos AST propios.
 Soporta arreglos (array [N] of int, arr[i]) y funciones (function f(...) : int).
@@ -17,6 +17,7 @@ from compilador.ast_nodes import (
     Assign,
     BinOp,
     Call,
+    CallStmt,
     Comparison,
     Dec,
     Expr,
@@ -76,12 +77,29 @@ class ASTBuilder(Transformer):
         return [decl for item in children if isinstance(item, list) for decl in item]
 
     def decl_item(self, children):
-        names = children[0]
-        type_name, array_size = children[2]
-        return [
-            VarDecl(name=name, type_name=type_name, array_size=array_size)
-            for name in names
-        ]
+        declarators = children[0]  # lista de (nombre, tamaño|None)
+        type_name, type_array_size = children[2]
+        decls: list[VarDecl] = []
+        for name, own_size in declarators:
+            # Prioridad: tamaño inline del declarador (datos[6]) sobre el tipo.
+            if own_size is not None:
+                decls.append(VarDecl(name=name, type_name="int[]", array_size=own_size))
+            elif type_array_size is not None:
+                decls.append(VarDecl(name=name, type_name=type_name, array_size=type_array_size))
+            else:
+                decls.append(VarDecl(name=name, type_name=type_name, array_size=None))
+        return decls
+
+    def declarator_list(self, children):
+        return [c for c in children if isinstance(c, tuple)]
+
+    def scalar_declarator(self, children):
+        return (children[0].value, None)
+
+    def array_declarator(self, children):
+        name = children[0].value
+        size_tok = next(c for c in children if isinstance(c, Token) and c.type == "INTEGER")
+        return (name, int(size_tok.value))
 
     def ident_list(self, children):
         return [tok.value for tok in children if isinstance(tok, Token) and tok.type == "IDENT"]
@@ -102,7 +120,7 @@ class ASTBuilder(Transformer):
                 continue
             if child and isinstance(child[0], Param):
                 params = tuple(child)
-            elif isinstance(child[0], (Assign, Write, If, While, For, Inc, Dec)) if child else False:
+            elif isinstance(child[0], (Assign, CallStmt, Write, If, While, For, Inc, Dec)) if child else False:
                 body = child
             elif not child:
                 body = child
@@ -134,6 +152,17 @@ class ASTBuilder(Transformer):
 
     def array_lvalue(self, children):
         return ArrayAccess(name=children[0].value, index=self._to_expr(children[2]))
+
+    def int_lvalue(self, children):
+        return IntLit(value=int(children[0].value))
+
+    def call_stmt(self, children):
+        name = children[0].value
+        args: tuple[Expr, ...] = ()
+        for child in children[1:]:
+            if isinstance(child, tuple):
+                args = child
+        return CallStmt(call=Call(name=name, args=args))
 
     def write_stmt(self, children):
         return Write(arg=children[2])

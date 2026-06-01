@@ -21,10 +21,16 @@ top_level_item: decls
 
 // --- Declaraciones ----------------------------------------------------------
 // var i, n : int;
-// var nums : array [5] of int;   (índices válidos: 0 .. N-1)
+// var nums : array [5] of int;          (sintaxis "of": índices 0 .. N-1)
+// var i, j, datos[6] : int;             (sintaxis inline: datos es arreglo)
 decls: VAR decl_item (COMMA decl_item)* SEMICOLON
 
-decl_item: ident_list COLON type_spec
+decl_item: declarator_list COLON type_spec
+
+declarator_list: declarator (COMMA declarator)*
+
+declarator: IDENT                        -> scalar_declarator
+          | IDENT LBRACK INTEGER RBRACK  -> array_declarator
 
 ident_list: IDENT (COMMA IDENT)*
 
@@ -33,7 +39,8 @@ type_spec: INT_KW -> int_type
 
 // --- Funciones --------------------------------------------------------------
 // function suma(a, b : int) : int { begin; suma := a + b; end; }
-function_def: FUNCTION IDENT LPAR param_list? RPAR COLON INT_KW LBRACE stmt_section RBRACE
+// function proc() { begin; ... end; }   (sin tipo de retorno → procedimiento)
+function_def: FUNCTION IDENT LPAR param_list? RPAR (COLON INT_KW)? LBRACE stmt_section RBRACE
 
 param_list: param_group (COMMA param_group)*
 
@@ -51,12 +58,19 @@ stmt_list: stmt*
      | while_stmt
      | for_stmt
      | postfix_stmt
+     | call_stmt
+
+// --- Llamada a función como sentencia: proc(); ------------------------------
+call_stmt: IDENT LPAR arg_list? RPAR SEMICOLON
 
 // --- Asignación: variable o arreglo[index] := expresión; --------------------
+// Se admite un literal como destino (lvalue inválido) para que el análisis
+// semántico lo reporte como error en lugar de fallar en el parser.
 assign_stmt: assignable ASSIGN expr SEMICOLON
 
 assignable: IDENT -> var_lvalue
           | IDENT LBRACK expr RBRACK -> array_lvalue
+          | INTEGER -> int_lvalue
 
 // --- Write: write(expr) o write("cadena"); ---------------------------------
 write_stmt: WRITE LPAR write_arg RPAR SEMICOLON

@@ -1,8 +1,8 @@
 """
 Analizador sintáctico (Fases 2–3 + extra).
 
-Fase 2: programa núcleo (var, begin/end, write, :=, expresiones).
-Fase 3: control de flujo (if/then/else, while/do, for).
+programa núcleo (var, begin/end, write, :=, expresiones).
+control de flujo (if/then/else, while/do, for).
 Extra:  arreglos (array [N] of int, arr[i]) y funciones (function ...).
 """
 

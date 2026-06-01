@@ -1,0 +1,25 @@
+program main{
+	var total, control, flag : int;
+
+	function control() {
+	begin;
+		write("Funcion control activa");
+	end;
+	}
+
+	begin;
+		write("--- TEST DE VALIDACION SEMANTICA 2 ---");
+		total := 50;
+
+		/* Error Semantico 1: El identificador 'control' ya fue registrado como una funcion en este ambito */
+		control := total + 10;
+
+		/* Error Semantico 2: Lvalue invalido. No se puede asignar un valor a un numero literal constante */
+		100 := total * 2;
+
+		/* Error Semantico 3: Mal uso de identificador. 'control' es una funcion, no puede llevar indices de arreglo */
+		control[2] := 15;
+
+		write(total);
+	end;
+}

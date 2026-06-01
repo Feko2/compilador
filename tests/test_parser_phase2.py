@@ -64,7 +64,13 @@ def test_nucleo_for_structure() -> None:
     assert top_level.data == "top_level_items"
     decls = top_level.children[0].children[0]
     assert decls.data == "decls"
-    idents = [c.value for c in decls.children[1].children[0].children if c.type == "IDENT"]
+    declarator_list = decls.children[1].children[0]
+    assert declarator_list.data == "declarator_list"
+    idents = [
+        d.children[0].value
+        for d in declarator_list.children
+        if hasattr(d, "data")  # nodos declarador (omite tokens COMMA)
+    ]
     assert idents == ["i", "n", "x"]
 
 

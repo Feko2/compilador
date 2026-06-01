@@ -1,0 +1,41 @@
+program main{
+	var x, y, producto, validacion : int;
+
+	function calcular_producto() {
+	begin;
+		while (y > 0) do
+		{
+			producto := producto + x;
+			y--;
+		}
+	end;
+	}
+
+	function verificar_limite() {
+	begin;
+		if (producto > 20) then
+		{
+			validacion := 1;
+		} else
+		{
+			validacion := 0;
+		}
+	end;
+	}
+
+	begin;
+		write("--- CALCULADORA DE PROCEDIMIENTOS ---");
+		x := 6;
+		y := 4;
+		producto := 0;
+		validacion := 0;
+
+		calcular_producto();
+		write("El producto calculado es:");
+		write(producto);
+
+		verificar_limite();
+		write("Resultado de la validacion (1=Supero limite, 0=Menor):");
+		write(validacion);
+	end;
+}

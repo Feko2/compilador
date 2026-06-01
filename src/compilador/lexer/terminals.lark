@@ -4,6 +4,10 @@
 %import common.WS
 %ignore WS
 
+// Comentarios de bloque estilo C: /* ... */ (pueden abarcar varias líneas)
+COMMENT: /\/\*[\s\S]*?\*\//
+%ignore COMMENT
+
 PROGRAM: "program"
 MAIN: "main"
 VAR: "var"

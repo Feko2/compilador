@@ -1,0 +1,36 @@
+program main{
+	var numero, esPar, residuo : int;
+	begin;
+		write("--- CLASIFICADOR DE NUMEROS CON IFS ---");
+		numero := -4;
+		residuo := numero - ((numero / 2) * 2); /* Simulacion de residuo manual si no hay operador modulo */
+
+		if (numero > 0) then
+		{
+			write("El numero es positivo");
+			if (residuo == 0) then
+			{
+				write("Y tambien es par");
+			} else
+			{
+				write("Y tambien es impar");
+			}
+		} else
+		{
+			if (numero < 0) then
+			{
+				write("El numero es negativo");
+				if (residuo == 0) then
+				{
+					write("Y tambien es par");
+				} else
+				{
+					write("Y tambien es impar");
+				}
+			} else
+			{
+				write("El numero es exactamente cero");
+			}
+		}
+	end;
+}

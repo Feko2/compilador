@@ -1,5 +1,5 @@
 """
-Fase 6–7 — Intérprete (Runtime) con arreglos y funciones.
+Intérprete (Runtime) con arreglos y funciones.
 
 Memoria:
 - Escalares: dict[str, int]
@@ -22,6 +22,7 @@ from compilador.ast_nodes import (
     Assign,
     BinOp,
     Call,
+    CallStmt,
     Comparison,
     Cond,
     Dec,
@@ -111,6 +112,8 @@ class Interpreter:
     def _exec_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, Assign):
             self._exec_assign(stmt)
+        elif isinstance(stmt, CallStmt):
+            self._eval_call(stmt.call)
         elif isinstance(stmt, Write):
             self._exec_write(stmt)
         elif isinstance(stmt, If):
@@ -126,6 +129,8 @@ class Interpreter:
 
     def _exec_assign(self, stmt: Assign) -> None:
         value = self._eval_expr(stmt.value)
+        if isinstance(stmt.target, IntLit):
+            raise RuntimeError("Lvalue inválido: no se puede asignar a un literal entero.")
         if isinstance(stmt.target, str):
             self.scalars[stmt.target] = value
             self._emit(":=", str(value), "", stmt.target)
@@ -270,25 +275,40 @@ class Interpreter:
                 f"Función '{call.name}' espera {len(func.params)} argumento(s).",
             )
 
-        callee = Interpreter(
-            functions=self.functions,
-            quadruples=self.quadruples,
-        )
-        callee._temp_counter = self._temp_counter
+        # Evaluar los argumentos en el ámbito del llamador, antes de ligar parámetros.
+        arg_values = [self._eval_expr(arg) for arg in call.args]
 
-        for param, arg_expr in zip(func.params, call.args):
-            callee.scalars[param.name] = self._eval_expr(arg_expr)
-        callee.scalars[func.name] = 0
-        callee._current_function = func.name
+        # La función comparte la memoria global; sólo los parámetros y la
+        # variable de retorno (nombre de la función) son locales y se ligan
+        # temporalmente, restaurando cualquier global que oculten.
+        saved: dict[str, int] = {}
+        introduced: set[str] = set()
+
+        def bind_local(name: str, value: int) -> None:
+            if name in self.scalars:
+                saved.setdefault(name, self.scalars[name])
+            else:
+                introduced.add(name)
+            self.scalars[name] = value
+
+        for param, value in zip(func.params, arg_values):
+            bind_local(param.name, value)
+        bind_local(func.name, 0)
 
         self._emit("call", call.name, str(len(call.args)), func.name)
 
-        for stmt in func.body:
-            callee._exec_stmt(stmt)
-
-        self._temp_counter = callee._temp_counter
-
-        return callee.scalars[func.name]
+        saved_fn = self._current_function
+        self._current_function = func.name
+        try:
+            for stmt in func.body:
+                self._exec_stmt(stmt)
+            return self.scalars[func.name]
+        finally:
+            self._current_function = saved_fn
+            for name in introduced:
+                self.scalars.pop(name, None)
+            for name, value in saved.items():
+                self.scalars[name] = value
 
 
 def run(program: Program) -> ExecutionResult:

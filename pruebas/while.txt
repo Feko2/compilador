@@ -1,0 +1,21 @@
+program main{
+	var dividendo, divisor, cociente, residuo : int;
+	begin;
+		write("--- DIVISION POR RESTAS CON WHILE ---");
+		dividendo := 23;
+		divisor := 5;
+		cociente := 0;
+		
+		while (dividendo >= divisor) do
+		{
+			dividendo := dividendo - divisor;
+			cociente++;
+		}
+		
+		residuo := dividendo;
+		write("Cociente obtenido:");
+		write(cociente);
+		write("Residuo obtenido:");
+		write(residuo);
+	end;
+}

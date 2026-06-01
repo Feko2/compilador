@@ -1,5 +1,5 @@
 """
-Fase 5 — Análisis Semántico (con arreglos y funciones).
+Análisis Semántico (con arreglos y funciones).
 
 Tabla de símbolos global + ámbitos locales en funciones.
 Chequeos extra:
@@ -19,6 +19,7 @@ from compilador.ast_nodes import (
     Assign,
     BinOp,
     Call,
+    CallStmt,
     Comparison,
     Cond,
     Dec,
@@ -106,6 +107,11 @@ class SemanticAnalyzer:
         for decl in declarations:
             if self.table.is_declared(decl.name):
                 self._error(f"Variable '{decl.name}' declarada más de una vez.")
+            if decl.name in self.table.functions:
+                self._error(
+                    f"El identificador '{decl.name}' ya fue registrado como una función.",
+                    "Una función y una variable no pueden compartir el mismo nombre.",
+                )
             if decl.array_size is not None and decl.array_size <= 0:
                 self._error(
                     f"Tamaño inválido para arreglo '{decl.name}'.",
@@ -140,6 +146,8 @@ class SemanticAnalyzer:
     def _check_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, Assign):
             self._check_assign(stmt)
+        elif isinstance(stmt, CallStmt):
+            self._check_call(stmt.call)
         elif isinstance(stmt, Write):
             self._check_write(stmt)
         elif isinstance(stmt, If):
@@ -156,7 +164,12 @@ class SemanticAnalyzer:
         if value_type == TYPE_BOOL:
             self._error("No se puede asignar un valor booleano a una variable int.")
 
-        if isinstance(stmt.target, str):
+        if isinstance(stmt.target, IntLit):
+            self._error(
+                "Lvalue inválido: no se puede asignar un valor a un literal entero.",
+                "El destino de una asignación debe ser una variable o un elemento de arreglo.",
+            )
+        elif isinstance(stmt.target, str):
             if stmt.target == self._current_function:
                 return
             if not self.table.is_declared(stmt.target):

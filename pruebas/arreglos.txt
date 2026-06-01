@@ -1,0 +1,19 @@
+program main{
+	var i, j, limite, datos[6] : int;
+	begin;
+		write("--- INVERTIR ARREGLO ---");
+		limite := 6;
+		
+		/* Llenado secuencial inicial: 10, 20, 30... */
+		for (i := 0; i < limite; i++) {
+			datos[i] := (i + 1) * 10;
+			write(datos[i]);
+		}
+		
+		write("Desplegando datos en orden invertido:");
+		/* Recorrido inverso dinámico indexado */
+		for (j := 5; j >= 0; j--) {
+			write(datos[j]);
+		}
+	end;
+}
